@@ -22,5 +22,4 @@ token = Table(
     autoload_with=engine
 )
 
-count = conn.execute(token.delete(token.c.expires<=datetime.now()))
-print count
+conn.execute(token.delete(token.c.expires<=datetime.now()))
