@@ -1,48 +1,36 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 import ConfigParser
 import os
+from cinderclient.v1 import client
 from sqlalchemy import create_engine, select, MetaData, Table
 
 config = ConfigParser.ConfigParser()
 config.read(['os.cfg',os.path.expanduser('~/.os.cfg'),'/etc/os-maint/os.cfg'])
 
 cinder_db_conn = config.get('CINDER', 'db_connection')
+os_user_name = config.get('OPENSTACK', 'os_user_name')
+os_password = config.get('OPENSTACK', 'os_password')
+os_tenant_name = config.get('OPENSTACK', 'os_tenant_name')
+os_auth_url = config.get('OPENSTACK', 'os_auth_url')
+os_region_name = config.get('OPENSTACK', 'os_region_name')
 
-engine = create_engine(cinder_db_conn, echo=True)
-conn = engine.connect()
-metadata = MetaData()
+cc = client.Client(os_user_name, os_password, os_tenant_name, os_auth_url, service_type='volume')
+volumes = []
 
-volumes = Table(
-    'volumes',
-    metadata,
-    autoload=True,
-    autoload_with=engine
-)
+for vol in cc.volumes.list(True, {'all_tenants': '1'}):
+  if vol.status in ('error', 'error_deleting'):
+    print vol.id + " " + vol.status
+    volumes.append(vol)
 
-quota_usages = Table(
-    'quota_usages',
-    metadata,
-    autoload=True,
-    autoload_with=engine
-)
+dialog = "Delete all errored volumes? (Y/N)"
+try: 
+  confirm = raw_input(dialog)
+except NameError: 
+  confirm = input(dialog)
 
-sel = select([volumes])
-result = conn.execute(sel)
-for vol in result:
-  if vol.id == 'fb65fd79-96bb-4fd4-8cfa-5cc7a85cf324':
-    print vol.id + " " + str(vol.size)
-    conn.execute(volumes.update().
-                 where(volumes.c.id==vol.id).
-                 values(status='deleted')
-                 )
-    conn.execute(quota_usages.update().
-                 where(quota_usages.c.project_id==vol.project_id).
-                 where(quota_usages.c.resource=='gigabytes').
-                 values(in_use=quota_usages.c.in_use - vol.size)
-                 )
-    conn.execute(quota_usages.update().
-                 where(quota_usages.c.project_id==vol.project_id).
-                 where(quota_usages.c.resource=='volumes').
-                 values(in_use=quota_usages.c.in_use - 1)
-                 )
+if ( confirm.lower() == 'y' ):
+  for vol in volumes:
+    print "Deleting " + vol.id
+    if not vol.force_delete():
+      print "Error Deleting " + vol.id
