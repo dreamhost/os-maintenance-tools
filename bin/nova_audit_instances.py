@@ -22,12 +22,18 @@ hosts = []
 
 nova_servers = dict()
 
-for s in nc.servers.list(True, {'all_tenants': '1'}):
+def add_server(server):
   name = s._info['OS-EXT-SRV-ATTR:instance_name']
   hypervisor = s._info['OS-EXT-SRV-ATTR:hypervisor_hostname']
-  if not hypervisor in nova_servers:
+  if hypervisor not in nova_servers:
     nova_servers[hypervisor] = {} 
   nova_servers[hypervisor][name] = s
+
+for s in nc.servers.list(True, {'all_tenants': '1'}):
+  add_server(s)
+
+for s in nc.servers.list(True, {'all_tenants': '1', 'deleted': '1'}):
+  add_server(s)
 
 if len(sys.argv) > 1:
   hosts = [sys.argv[1]]
@@ -37,14 +43,15 @@ else:
 
 for hypervisor in hosts:
   print 'Auditing {}'.format(hypervisor)
-  try:
-    conn = libvirt.open(connection_template.replace('$host', hypervisor))
+  conn = libvirt.open(connection_template.replace('$host', hypervisor))
 
-    for id in conn.listDomainsID():
-      dom = conn.lookupByID(id)
-      infos = dom.info()
-      if not dom.name() in nova_servers[hypervisor]:
+  for id in conn.listDomainsID():
+    dom = conn.lookupByID(id)
+    infos = dom.info()
+    if hypervisor in nova_servers:
+      if dom.name() not in nova_servers[hypervisor]:
         print "{} not found in nova on {}".format(dom.name(), hypervisor)
-  except:
-    print "couldn't connect to {}".format(hypervisor)
+      else:
+        if nova_servers[hypervisor][dom.name()].status == 'DELETED':
+          print "{} supposed to be deleted on {}".format(dom.name(), hypervisor)
 
