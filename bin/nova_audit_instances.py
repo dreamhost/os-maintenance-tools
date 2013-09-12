@@ -43,15 +43,19 @@ else:
 
 for hypervisor in hosts:
   print 'Auditing {}'.format(hypervisor)
-  conn = libvirt.open(connection_template.replace('$host', hypervisor))
-
-  for id in conn.listDomainsID():
-    dom = conn.lookupByID(id)
-    infos = dom.info()
-    if hypervisor in nova_servers:
-      if dom.name() not in nova_servers[hypervisor]:
-        print "{} not found in nova on {}".format(dom.name(), hypervisor)
-      else:
-        if nova_servers[hypervisor][dom.name()].status == 'DELETED':
-          print "{} supposed to be deleted on {}".format(dom.name(), hypervisor)
-
+  try:
+    conn = libvirt.open(connection_template.replace('$host', hypervisor))
+  except:
+    print "Connection to {} failed".format(hypervisor)
+    conn = False
+  if conn:
+    for id in conn.listDomainsID():
+      dom = conn.lookupByID(id)
+      infos = dom.info()
+      if hypervisor in nova_servers:
+        if dom.name() not in nova_servers[hypervisor]:
+          print "{} not found in nova on {}".format(dom.name(), hypervisor)
+        else:
+          if nova_servers[hypervisor][dom.name()].status == 'DELETED':
+            print "{} supposed to be deleted on {}".format(dom.name(), hypervisor)
+  
