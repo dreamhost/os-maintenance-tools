@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 
 import ConfigParser
-import libvirt
 import os
 import sys
 
 config = ConfigParser.ConfigParser()
-config.read(['os.cfg',os.path.expanduser('~/.os.cfg'),'/etc/os-maint/os.cfg'])
+config.read(['os.cfg',
+    os.path.expanduser('~/.os.cfg'),
+    '/etc/os-maint/os.cfg'])
 
 os_user_name = config.get('OPENSTACK', 'os_user_name')
 os_password = config.get('OPENSTACK', 'os_password')
@@ -21,12 +22,14 @@ nc = client.Client(username=os_user_name,
                    auth_url=os_auth_url)
 
 if len(sys.argv) > 1:
-  router = sys.argv[1]
-  my_router = nc.show_router(router).get('router')
+    router = sys.argv[1]
+    my_router = nc.show_router(router).get('router')
 #  print my_router.values()
-  print my_router.get('status')
-  if my_router.has_key('ports'):
-    print "We have ports"
-    ports = my_router.get('ports')
-    for port in ports:
-      print port.get('id')
+    print my_router.get('status')
+    if 'ports' in my_router.keys:
+        print "We have ports"
+        ports = my_router.get('ports')
+        for port in ports:
+            print port.get('id')
+    else:
+        print "Router has no ports, continuing"
