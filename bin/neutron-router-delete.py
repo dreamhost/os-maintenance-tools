@@ -24,9 +24,11 @@ if len(sys.argv) > 1:
   router = sys.argv[1]
   my_router = nc.show_router(router).get('router')
 #  print my_router.values()
-  print my_router.get('status')
+  print "router status is {}".format(my_router.get('status'))
   if my_router.has_key('ports'):
     print "We have ports"
     ports = my_router.get('ports')
     for port in ports:
-      print port.get('id')
+      port_id = port.get('id')
+      my_port = nc.show_port(port_id).get('port')
+      print "port {} status {}".format(port_id,my_port.get('status'))
