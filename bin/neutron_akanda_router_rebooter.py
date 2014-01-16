@@ -74,4 +74,4 @@ for router in nc.list_routers().get('routers'):
   nova_name = "ak-" + router.get('id')
   print "looking up nova name " + nova_name
   if nova_name in servers:
-    print "found" + nova_name
+    print "found " + nova_name
