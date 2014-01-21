@@ -35,8 +35,6 @@ keystone = client.Client(username=os_user_name,
                          )
 glance_endpoint = keystone.service_catalog.get_endpoints('image').get('image')[0].get('internalURL').rsplit('/', 1)[0]
 token = keystone.auth_token
-print "token = " + token
-print "glance_endpoint = " + glance_endpoint
 
 from glanceclient import Client as glanceclient
 gc = glanceclient('1', endpoint=glance_endpoint, token=token)
@@ -60,18 +58,16 @@ for server in novac.servers.list(True, {'all_tenants': 1}):
       print "can't find image with id of " + image_id
       pass
     else:
-      print "processing image" + image.name
       ## TODO: replace this static owner with a lookup of the service user
       if image.name.startswith('akanda') and image.owner == '6decb8aa1c974e2983e08b192118ab63':
-        print "FOUND A ROUTER"
         router = 1
 
   if router == 1:
-    servers[server.name] = server.id
+    servers[server.name] = server
 
 
 for router in nc.list_routers().get('routers'):
   nova_name = "ak-" + router.get('id')
-  print "looking up nova name " + nova_name
   if nova_name in servers:
-    print "found " + nova_name
+    print "Rebooting " + nova_name
+    #servers[nova_name].reboot(reboot_type='HARD')
