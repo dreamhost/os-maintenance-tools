@@ -33,7 +33,22 @@ keystone = client.Client(username=os_user_name,
                          tenant_name=os_tenant_name,
                          auth_url=os_auth_url
                          )
-glance_endpoint = keystone.service_catalog.get_endpoints('image').get('image')[0].get('internalURL').rsplit('/', 1)[0]
+glance_endpoint = keystone.service_catalog.get_endpoints('image').get('image')[0].get('internalURL')
+## HACKITY HACK HACK HACK
+if ( glance_endpoint.endswith('/v2') or glance_endpoint.endswith('/v1') ) :
+  glance_endpoint = glance_endpoint.rsplit('/', 1)[0]
+
+print "Found a glance endpoint at {}".format(glance_endpoint)
+
+for tenant in keystone.tenants.list():
+  if tenant.name == 'service':
+    svc_tenant = tenant.id
+    break
+
+if not svc_tenant:
+  print "can't find service tenant, bailing"
+  sys.exit(0)
+
 token = keystone.auth_token
 
 from glanceclient import Client as glanceclient
@@ -56,10 +71,9 @@ for server in novac.servers.list(True, {'all_tenants': 1}):
       image = gc.images.get(image_id)
     except:
       print "can't find image with id of " + image_id
-      pass
+      
     else:
-      ## TODO: replace this static owner with a lookup of the service user
-      if image.name.startswith('akanda') and image.owner == '6decb8aa1c974e2983e08b192118ab63':
+      if image.name.startswith('akanda') and image.owner == svc_tenant:
         router = 1
 
   if router == 1:
@@ -70,4 +84,4 @@ for router in nc.list_routers().get('routers'):
   nova_name = "ak-" + router.get('id')
   if nova_name in servers:
     print "Rebooting " + nova_name
-    #servers[nova_name].reboot(reboot_type='HARD')
+    servers[nova_name].reboot(reboot_type='HARD')
