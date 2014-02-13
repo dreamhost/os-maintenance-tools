@@ -3,7 +3,6 @@
 import ConfigParser
 import os
 from cinderclient.v1 import client
-from sqlalchemy import create_engine, select, MetaData, Table
 
 config = ConfigParser.ConfigParser()
 config.read(['os.cfg',os.path.expanduser('~/.os.cfg'),'/etc/os-maint/os.cfg'])
