@@ -1,9 +1,15 @@
 #!/usr/bin/env python
 
 import ConfigParser
+import argparse
 import libvirt
 import os
 import sys
+
+parser = argparse.ArgumentParser(description='Nova Auditor')
+parser.add_argument('--clean', action='store_true', default=False, help='auto-clean orphans')
+parser.add_argument('--hypervisor', action='append', default=[], help='specify a hypervisor to check')
+args = parser.parse_args()
 
 config = ConfigParser.ConfigParser()
 config.read(['os.cfg',os.path.expanduser('~/.os.cfg'),'/etc/os-maint/os.cfg'])
@@ -34,8 +40,8 @@ for s in nc.servers.list(True, {'all_tenants': '1'}):
 for s in nc.servers.list(True, {'all_tenants': '1', 'deleted': '1'}):
   add_server(s)
 
-if len(sys.argv) > 1:
-  hosts = [sys.argv[1]]
+if args.hypervisor:
+  hosts = args.hypervisor
 else:
   for hv in nc.hypervisors.list():
     hosts.append(hv.hypervisor_hostname)
@@ -54,6 +60,12 @@ for hypervisor in hosts:
       if hypervisor in nova_servers:
         if dom.name() not in nova_servers[hypervisor]:
           print "{} not found in nova on {}".format(dom.name(), hypervisor)
+          if args.clean:
+            print "auto-cleaning %s" % dom.name()
+            try:
+              dom.destroy()
+            except libvirt.libvirtError:
+              pass
         else:
           if nova_servers[hypervisor][dom.name()].status == 'DELETED':
             print "{} supposed to be deleted on {}".format(dom.name(), hypervisor)
