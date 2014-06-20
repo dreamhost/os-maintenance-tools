@@ -49,32 +49,32 @@ def main():
 
     body = {'floatingip': {'floating_network_id': public_network_id}}
 
-    allocated = 0
+    allocated = []
 
     print '\nAllocating temporary floating ips ',
 
     try:
         while True:
-            neutron_client.create_floatingip(body).get('floatingip')
-            allocated += 1
-            print_dot(allocated)
+            f_ip = neutron_client.create_floatingip(body).get('floatingip')
+            allocated.append(f_ip)
+            print_dot(len(allocated))
     except neutron_exceptions.IpAddressGenerationFailureClient:
         print 'Done'
-        print '\nFloaters allocated: %d' % allocated
+        print '\nFloaters allocated: %d' % len(allocated)
     except Exception as err:
         print
         exc_type, exc_value, exc_tb = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_tb)
 
-        print '\nFloaters allocated: %d' % allocated
-        print '\nCleaning up all the allocated floaters',
+        print '\nFloaters allocated: %d' % len(allocated)
+        print '\nCleaning up all the allocated floaters ',
 
         deallocated = 0
 
-        for ip in neutron_client.list_floatingips().get('floatingips', []):
-            for i in range(3):
+        for f_ip in allocated:
+            for _ in range(3):
                 try:
-                    neutron_client.delete_floatingip(ip['id'])
+                    neutron_client.delete_floatingip(f_ip['id'])
                     deallocated += 1
                     print_dot(deallocated)
                     break
@@ -82,7 +82,7 @@ def main():
                     continue
             else:
                 print ('Floating ip %s has not been removed' %
-                       ip['floating_ip_address'])
+                       f_ip['floating_ip_address'])
 
         print 'Done'
 
@@ -95,13 +95,13 @@ def main():
     deallocated = 0
     reserved = []
 
-    for ip in neutron_client.list_floatingips().get('floatingips', []):
-        if ip['floating_ip_address'].split('.')[-1] in ['0', '1', '255']:
-            reserved.append(ip)
+    for f_ip in allocated:
+        if f_ip['floating_ip_address'].split('.')[-1] in ['0', '1', '255']:
+            reserved.append(f_ip)
             continue
-        for i in range(3):
+        for _ in range(3):
             try:
-                neutron_client.delete_floatingip(ip['id'])
+                neutron_client.delete_floatingip(f_ip['id'])
                 deallocated += 1
                 print_dot(deallocated)
                 break
@@ -109,7 +109,7 @@ def main():
                 continue
             else:
                 print ('Floating ip %s has not been removed' %
-                       ip['floating_ip_address'])
+                       f_ip['floating_ip_address'])
     print 'Done'
 
     print '\nFloaters deallocated: %d' % deallocated
@@ -118,8 +118,8 @@ def main():
     if reserved:
         print '\nReserved ips'
         reserved.sort()
-        for ip in reserved:
-            print ip['floating_ip_address']
+        for f_ip in reserved:
+            print f_ip['floating_ip_address']
 
     print ''
 
