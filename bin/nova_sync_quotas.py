@@ -79,21 +79,21 @@ for project in usage:
       print "NEW: project {}, user {} using {} megabytes, {} cores in {} instances".format(project, user, usage[project][user]['ram'], usage[project][user]['cores'], usage[project][user]['instances'])
     else:
       print "project {}, user {} already synced".format(project, user)
-    update = quota_usages.update().\
+      update = quota_usages.update().\
             where(quota_usages.c.project_id == project).\
             where(quota_usages.c.user_id == user).\
             where(quota_usages.c.resource == 'instances').\
             values(in_use=usage[project][user]['instances'])
-    conn.execute(update)
-    update = quota_usages.update().\
+      conn.execute(update)
+      update = quota_usages.update().\
             where(quota_usages.c.project_id == project).\
             where(quota_usages.c.user_id == user).\
             where(quota_usages.c.resource == 'cores').\
             values(in_use=usage[project][user]['cores'])
-    conn.execute(update)
-    update = quota_usages.update().\
+      conn.execute(update)
+      update = quota_usages.update().\
             where(quota_usages.c.project_id == project).\
             where(quota_usages.c.user_id == project).\
             where(quota_usages.c.resource == 'ram').\
             values(in_use=usage[project][user]['ram'])
-    conn.execute(update)
+      conn.execute(update)
