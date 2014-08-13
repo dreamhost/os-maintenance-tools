@@ -44,11 +44,11 @@ for u in initial_usages:
     initial_usage[u.project_id][u.user_id] = {'instances': 0, 'cores': 0, 'ram': 0}
   initial_usage[u.project_id][u.user_id][u.resource] = u.in_use
 
-#init_select = select([quota_usages.c.project_id]).distinct()
-#projects = conn.execute(init_select)
-#for project in projects:
-#  for p in project.items():
-#    usage[p[1]] = {'instances': 0, 'cores': 0, 'ram': 0}
+init_select = select([quota_usages.c.project_id, quota_usages.c.user_id]).distinct()
+qu = conn.execute(init_select)
+for q in qu:
+  usage[q.project_id] = dict()
+  usage[q.project_id][q.user_id] = {'instances': 0, 'cores': 0, 'ram': 0}
 
 ## These are the only states that should count against one's quota
 instance_select = select([instances]).where(or_(instances.c.vm_state == 'active',
@@ -91,7 +91,7 @@ for project in usage:
       conn.execute(update)
       update = quota_usages.update().\
             where(quota_usages.c.project_id == project).\
-            where(quota_usages.c.user_id == project).\
+            where(quota_usages.c.user_id == user).\
             where(quota_usages.c.resource == 'ram').\
             values(in_use=usage[project][user]['ram'])
       conn.execute(update)
