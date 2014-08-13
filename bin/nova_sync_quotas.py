@@ -77,8 +77,6 @@ for project in usage:
       initial_usage[project][user]['instances'] != usage[project][user]['instances']):
       print "OLD: project {}, user {} using {} megabytes, {} cores in {} instances".format(project, user, initial_usage[project][user]['ram'], initial_usage[project][user]['cores'], initial_usage[project][user]['instances'])
       print "NEW: project {}, user {} using {} megabytes, {} cores in {} instances".format(project, user, usage[project][user]['ram'], usage[project][user]['cores'], usage[project][user]['instances'])
-    else:
-      print "project {}, user {} already synced".format(project, user)
       update = quota_usages.update().\
             where(quota_usages.c.project_id == project).\
             where(quota_usages.c.user_id == user).\
@@ -97,3 +95,5 @@ for project in usage:
             where(quota_usages.c.resource == 'ram').\
             values(in_use=usage[project][user]['ram'])
       conn.execute(update)
+    else:
+      print "project {}, user {} already synced".format(project, user)
