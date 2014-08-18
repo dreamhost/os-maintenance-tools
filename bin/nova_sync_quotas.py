@@ -1,12 +1,20 @@
 #!/usr/bin/env python
 
 import ConfigParser
+import argparse
 import os
 from novaclient.v1_1 import client
 from sqlalchemy import create_engine, distinct, select, MetaData, Table, or_
 
 config = ConfigParser.ConfigParser()
 config.read(['os.cfg',os.path.expanduser('~/.os.cfg'),'/etc/os-maint/os.cfg'])
+
+parser = argparse.ArgumentParser(description='Nova Quota Sync')
+tenant_group = parser.add_mutually_exclusive_group(required=True)
+tenant_group.add_argument('--tenant', action='append', default=[], help='Tenant(s) to work on')
+tenant_group.add_argument('--all', action='store_true', default=False, help='Work on ALL tenants')
+parser.add_argument('--verbose', '-v', action='count', default=0, help='Verbose')
+args = parser.parse_args()
 
 cinder_db_conn = config.get('NOVA', 'db_connection')
 os_user_name = config.get('OPENSTACK', 'os_user_name')
@@ -15,7 +23,12 @@ os_tenant_name = config.get('OPENSTACK', 'os_tenant_name')
 os_auth_url = config.get('OPENSTACK', 'os_auth_url')
 os_region_name = config.get('OPENSTACK', 'os_region_name')
 
-engine = create_engine(cinder_db_conn, echo=True)
+if args.verbose >= 2:
+  sql_echo = True
+else:
+  sql_echo = False
+
+engine = create_engine(cinder_db_conn, echo=sql_echo)
 conn = engine.connect()
 metadata = MetaData()
 quota_usages = Table(
@@ -33,8 +46,8 @@ instances = Table(
 
 nc = client.Client(os_user_name, os_password, os_tenant_name, os_auth_url, service_type='compute')
 usage = dict()
-
 usage_select = select([quota_usages])
+
 initial_usages = conn.execute(usage_select)
 initial_usage = dict()
 for u in initial_usages:
@@ -44,11 +57,6 @@ for u in initial_usages:
     initial_usage[u.project_id][u.user_id] = {'instances': 0, 'cores': 0, 'ram': 0}
   initial_usage[u.project_id][u.user_id][u.resource] = u.in_use
 
-init_select = select([quota_usages.c.project_id, quota_usages.c.user_id]).distinct()
-qu = conn.execute(init_select)
-for q in qu:
-  usage[q.project_id] = dict()
-  usage[q.project_id][q.user_id] = {'instances': 0, 'cores': 0, 'ram': 0}
 
 ## These are the only states that should count against one's quota
 instance_select = select([instances]).where(or_(instances.c.vm_state == 'active',
@@ -58,6 +66,8 @@ instance_select = select([instances]).where(or_(instances.c.vm_state == 'active'
 instances = conn.execute(instance_select)
 for i in instances:
   project_id = i.project_id
+  if args.tenant and project_id not in args.tenant:
+    continue
   if project_id not in usage:
     usage[project_id] = dict()
   if i.user_id not in usage[project_id]:
@@ -96,4 +106,5 @@ for project in usage:
             values(in_use=usage[project][user]['ram'])
       conn.execute(update)
     else:
-      print "project {}, user {} already synced".format(project, user)
+      if args.verbose >= 1:
+        print "project {}, user {} already synced".format(project, user)
