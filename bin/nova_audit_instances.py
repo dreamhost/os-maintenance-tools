@@ -31,7 +31,7 @@ def add_server(server):
   name = s._info['OS-EXT-SRV-ATTR:instance_name']
   hypervisor = s._info['OS-EXT-SRV-ATTR:hypervisor_hostname']
   if hypervisor not in nova_servers:
-    nova_servers[hypervisor] = {} 
+    nova_servers[hypervisor] = dict()
   nova_servers[hypervisor][name] = s
 
 for s in nc.servers.list(True, {'all_tenants': '1'}):
@@ -59,7 +59,11 @@ for hypervisor in hosts:
       infos = dom.info()
       if hypervisor in nova_servers:
         if dom.name() not in nova_servers[hypervisor]:
-          print "{} not found in nova on {}".format(dom.name(), hypervisor)
+          uuid = dom.UUIDString()
+          print "name: {}, id: {} not found in first check of nova on {}".format(dom.name(), id, hypervisor)
+          if nc.servers.get(uuid):
+            print "name: {}, id: {} APPEARED after second check of nova on {}".format(dom.name(), id, hypervisor)
+            continue
           if args.clean:
             print "auto-cleaning %s" % dom.name()
             try:
