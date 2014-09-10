@@ -61,9 +61,12 @@ for hypervisor in hosts:
         if dom.name() not in nova_servers[hypervisor]:
           uuid = dom.UUIDString()
           print "name: {}, id: {} not found in first check of nova on {}".format(dom.name(), id, hypervisor)
-          if nc.servers.get(uuid):
-            print "name: {}, id: {} APPEARED after second check of nova on {}".format(dom.name(), id, hypervisor)
-            continue
+          try:
+            if nc.servers.get(uuid):
+              print "name: {}, id: {} APPEARED after second check of nova on {}".format(dom.name(), id, hypervisor)
+              continue
+          except:
+            pass
           if args.clean:
             print "auto-cleaning %s" % dom.name()
             try:
