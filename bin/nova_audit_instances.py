@@ -76,4 +76,10 @@ for hypervisor in hosts:
         else:
           if nova_servers[hypervisor][dom.name()].status == 'DELETED':
             print "{} supposed to be deleted on {}".format(dom.name(), hypervisor)
+            if args.clean:
+              print "auto-cleaning %s" % dom.name()
+              try:
+                dom.destroy()
+              except libvirt.libvirtError:
+                pass
   
