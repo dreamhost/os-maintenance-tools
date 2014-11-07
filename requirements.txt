@@ -1,0 +1,7 @@
+MySQL-python
+python-keystoneclient
+python-novaclient
+python-cinderclient
+python-glanceclient
+python-neutronclient
+sqlalchemy
