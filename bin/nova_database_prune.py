@@ -75,9 +75,9 @@ try:
     db.autocommit(False)
     cursor = db.cursor(MySQLdb.cursors.DictCursor)
     cursor.execute("""DELETE FROM reservations WHERE expire
-                    < DATE_SUB(NOW(), INTERVAL %s day)""")
+                    < DATE_SUB(NOW(), INTERVAL %s day)""" % days)
     cursor.execute("""DELETE FROM compute_node_stats WHERE deleted_at
-                    < DATE_SUB(NOW(), INTERVAL %s day)""")
+                    < DATE_SUB(NOW(), INTERVAL %s day)""" % days)
     db.commit()
 except db.Error, e:
     print "Rollback %s %s" % (e[0], e[1])
