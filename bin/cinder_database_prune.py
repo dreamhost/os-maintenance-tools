@@ -41,6 +41,7 @@ while (finished < 1):
         cursor.execute("DELETE FROM volume_metadata WHERE volume_id IN (%s)" % (sql_str), ids)
         cursor.execute("DELETE FROM volume_glance_metadata  WHERE volume_id IN (%s)" % (sql_str), ids)
         cursor.execute("DELETE FROM volume_admin_metadata WHERE volume_id IN (%s)" % (sql_str), ids)
+        cursor.execute("DELETE FROM transfers WHERE volume_id IN (%s)" % (sql_str), ids)
         # snapshots
         cursor.execute("SELECT id FROM snapshots WHERE volume_id  IN (%s)" % (sql_str), ids)
         snapids = []
@@ -54,6 +55,8 @@ while (finished < 1):
             snap_str = ','.join(['%s'] * len(snapids))
             cursor.execute("""DELETE FROM volume_glance_metadata WHERE
                             snapshot_id IN (%s)""" % (snap_str), snapids)
+            cursor.execute(""DELETE FROM snapshot_metadata WHERE
+                            snapshot_id IN (%s)"" % (snap_str), snapids)
             cursor.execute("""DELETE FROM snapshots WHERE id IN (%s) AND
                         status='deleted' AND deleted='1'""" % (snap_str), snapids)
 
