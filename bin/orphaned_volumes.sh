@@ -23,9 +23,9 @@ echo -en "Retrieving list of all tenants...\r"
 keystone tenant-list | tail -n +4 | awk '{print $2}' | sort -u > $keystone_tenants
 
 echo "Comparing outputs to locate orphaned volumes...\r"
-echo "+--------------------------------------+-----------------------------------+------------+--------------+------+--------+"
-echo "|             volume_id                |            tenant_id              | created_at | display_name | size | status |"
-echo "+--------------------------------------+-----------------------------------+------------+--------------+------+--------+"
+echo "+--------------------------------------+-----------------------------------+----------------------------+--------------+------+--------+"
+echo "|             volume_id                |            tenant_id              |        created_at          | display_name | size | status |"
+echo "+--------------------------------------+-----------------------------------+----------------------------+--------------+------+--------+"
 for tenant_id in `comm --nocheck-order -13 $keystone_tenants $cinder_reported_tenants`; do
 	for volume_id in `grep $tenant_id $volume_ids | awk '{print $1}'`; do
 		echo -en "| $volume_id | $tenant_id |"
