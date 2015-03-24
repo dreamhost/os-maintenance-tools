@@ -28,7 +28,7 @@ echo "|             volume_id                |            tenant_id             
 echo "+--------------------------------------+-----------------------------------+------------+--------------+------+--------+"
 for tenant_id in `comm --nocheck-order -13 $keystone_tenants $cinder_reported_tenants`; do
 	for volume_id in `grep $tenant_id $volume_ids | awk '{print $1}'`; do
-		echo -en "| $volume_id | $tenant_id | "
+		echo -en "| $volume_id | $tenant_id |"
 		for attr in `cinder show $volume_id | grep ' status \| size \| display_name \| created_at ' | awk '{print $4}'`; do
 			echo -en " $attr |"
 		done
