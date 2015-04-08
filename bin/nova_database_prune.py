@@ -57,6 +57,7 @@ while (finished < 1):
         cursor.execute("DELETE from instance_system_metadata where instance_uuid in (%s)" % (sql_str), ids)
         cursor.execute("DELETE from instance_faults where instance_uuid in (%s)" % (sql_str), ids)
         cursor.execute("DELETE from instance_metadata where instance_uuid in (%s)" % (sql_str), ids)
+        cursor.execute("DELETE from instance_extra where instance_uuid in (%s)" % (sql_str), ids)
         cursor.execute("DELETE from block_device_mapping where instance_uuid in (%s)" % (sql_str), ids)
         cursor.execute("DELETE from migrations where instance_uuid in (%s)" % (sql_str), ids)
         cursor.execute("DELETE from instances where uuid in (%s)" % (sql_str), ids)
