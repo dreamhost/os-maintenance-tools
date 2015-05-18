@@ -7,9 +7,21 @@ keystone_tenants=$(mktemp)
 
 echo -en "Retrieving list of all VMs...\r"
 nova list --all-tenants --fields tenant_id | tail -n +4 | awk '{print $4}' | sort -u > $vm_tenants
+total_vms=$(cat $vm_tenants | wc -l)
+if [ $total_vms == 0 ]; then
+	echo "Zero VMs found. Exiting..."
+	rm -f $vm_tenants $keystone_tenants
+	exit 1
+fi
 
 echo -en "Retrieving list of all tenants...\r"
 keystone tenant-list | tail -n +4 | awk '{print $2}' | sort -u > $keystone_tenants
+total_tenants=$(cat $keystone_tenants | wc -l)
+if [ $total_tenants == 0 ]; then
+	echo "Zero tenants found. Exiting..."
+	rm -f $vm_tenants $keystone_tenants
+	exit 1
+fi
 
 echo -en "Comparing outputs to locate orphaned VMs....\r"
 iter=0
