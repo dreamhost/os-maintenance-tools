@@ -2,6 +2,15 @@
 
 set -ex
 
+# ceph_uuid needs to be set to something legit. check the rbd disk devices on
+# existing VMs to see what UUID they have, and paste it here
+ceph_uuid=0
+
+if [[ $ceph_uuid == 0 ]]; then
+	echo "Please set ceph_id..."
+	exit 1
+fi
+
 # $1 needs to be the virsh instance name
 instance_name=$1
 
@@ -43,7 +52,7 @@ if [[ "$device" =~ ^hd.* ]]; then
         generate_iso_disk_xml > $isoxmlfile
         virsh detach-device $instance_name $isoxmlfile --config
         mount -o loop $path $isomntdir
-        rm $path
+        mv $path $instance_tmp_dir
         dd if=/dev/zero of=$vfatfile bs=1024 count=0 seek=1024
         mkfs.vfat $vfatfile
         mount $vfatfile $vfatmntdir
@@ -54,11 +63,10 @@ if [[ "$device" =~ ^hd.* ]]; then
         # ceph for us. if not, we'll need to do it ourselves.
 	rbd_object_name=$(./copy_to_rbd.py $path)
         mon_host_ip=$(grep "mon host" /etc/ceph/ceph.conf | cut -d'[' -f2 | cut -d']' -f1)
-        rm $path
-	# ceph_uuid needs to be set to something legit. check the rbd disk devices on
-	# existing VMs to see what UUID they have, and paste it here
-	ceph_uuid=0
         generate_vfat_disk_xml $rbd_object_name $mon_host_ip $ceph_uuid > $vfatxmlfile
         virsh attach-device $instance_name $vfatxmlfile --persistent
     fi
+    echo "$instance_name successfully migrated from iso->vfat!"
+else
+    echo " $instance_name is already using vfat. no migration required"
 fi
