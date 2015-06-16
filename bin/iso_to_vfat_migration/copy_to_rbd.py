@@ -32,5 +32,10 @@ rbd_inst.create(ioctx, disk_name, size)
 
 image = rbd.Image(ioctx, disk_name)
 image.write(open(config_drive).read(), 0)
+image.close()
+ioctx.close()
+cluster.shutdown()
 
 print '%s/%s' % (rbd_pool, disk_name)
+
+sys.exit(0)
