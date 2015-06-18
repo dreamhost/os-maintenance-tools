@@ -4,7 +4,7 @@ set -ex
 
 # ceph_uuid needs to be set to something legit. check the rbd disk devices on
 # existing VMs to see what UUID they have, and paste it here
-ceph_uuid=0
+ceph_uuid=''
 
 if [[ $ceph_uuid == 0 ]]; then
 	echo "Please set ceph_id..."
@@ -36,37 +36,44 @@ echo "<disk type='network' device='disk'>
 </disk>"
 }
 
+set +ex
+akanda_router=$(virsh dumpxml $1 | grep -c 'nova:name>ak-')
+set -ex
 cdrom_info=$(virsh domblklist $instance_name | grep "disk.config")
 device=$(echo $cdrom_info | awk '{print $1}')
 path=$(echo $cdrom_info | awk '{print $2}')
-if [[ "$device" =~ ^hd.* ]]; then
-    if [[ "$path" =~ ^/.* ]]; then
-        instance_tmp_dir="/tmp/iso_to_vfat/$instance_name"
-        isomntdir="$instance_tmp_dir/iso_mount"
-        vfatmntdir="$instance_tmp_dir/vfat_mount"
-        vfatfile="$path"
-        vfatxmlfile="$instance_tmp_dir/vfat.xml"
-        isoxmlfile="$instance_tmp_dir/iso.xml"
-        mkdir -p $isomntdir $vfatmntdir
-        virsh change-media $instance_name $device --eject --force
-        generate_iso_disk_xml > $isoxmlfile
-        virsh detach-device $instance_name $isoxmlfile --config
-        mount -o loop $path $isomntdir
-        mv $path $instance_tmp_dir
-        dd if=/dev/zero of=$vfatfile bs=1024 count=0 seek=1024
-        mkfs.vfat $vfatfile
-        mount $vfatfile $vfatmntdir
-        cp -rp $isomntdir/* $vfatmntdir
-	umount $isomntdir
-        umount $vfatmntdir
-        # nova, with the config-drive patch, might copy the config-drive to
-        # ceph for us. if not, we'll need to do it ourselves.
-	rbd_object_name=$(./copy_to_rbd.py $path)
-        mon_host_ip=$(grep "mon host" /etc/ceph/ceph.conf | cut -d'[' -f2 | cut -d']' -f1)
-        generate_vfat_disk_xml $rbd_object_name $mon_host_ip $ceph_uuid > $vfatxmlfile
-        virsh attach-device $instance_name $vfatxmlfile --persistent
+if [[ $akanda_router == 0 ]]; then
+    if [[ "$device" =~ ^hd.* ]]; then
+        if [[ "$path" =~ ^/.* ]]; then
+            instance_tmp_dir="/tmp/iso_to_vfat/$instance_name"
+            isomntdir="$instance_tmp_dir/iso_mount"
+            vfatmntdir="$instance_tmp_dir/vfat_mount"
+            vfatfile="$path"
+            vfatxmlfile="$instance_tmp_dir/vfat.xml"
+            isoxmlfile="$instance_tmp_dir/iso.xml"
+            mkdir -p $isomntdir $vfatmntdir
+            virsh change-media $instance_name $device --eject --force
+            generate_iso_disk_xml > $isoxmlfile
+            virsh detach-device $instance_name $isoxmlfile --config
+            mount -o loop $path $isomntdir
+            mv $path $instance_tmp_dir
+            dd if=/dev/zero of=$vfatfile bs=1024 count=0 seek=1024
+            mkfs.vfat $vfatfile
+            mount $vfatfile $vfatmntdir
+            cp -rp $isomntdir/* $vfatmntdir
+            umount $isomntdir
+            umount $vfatmntdir
+            # nova, with the config-drive patch, might copy the config-drive to
+            # ceph for us. if not, we'll need to do it ourselves.
+            rbd_object_name=$(./copy_to_rbd.py $path)
+            mon_host_ip=$(grep "mon host" /etc/ceph/ceph.conf | cut -d'[' -f2 | cut -d']' -f1)
+            generate_vfat_disk_xml $rbd_object_name $mon_host_ip $ceph_uuid > $vfatxmlfile
+            virsh attach-device $instance_name $vfatxmlfile --config
+        fi
+        echo "$instance_name successfully migrated from iso->vfat!"
+    else
+        echo " $instance_name is already using vfat. no migration required"
     fi
-    echo "$instance_name successfully migrated from iso->vfat!"
 else
-    echo " $instance_name is already using vfat. no migration required"
+    echo "akanda router. GET THE F' OUTTA HERE!!!!"
 fi
