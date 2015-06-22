@@ -6,17 +6,20 @@ import os
 from novaclient.v1_1 import client
 from sqlalchemy import create_engine, distinct, select, MetaData, Table, or_
 
-config = ConfigParser.ConfigParser()
-config.read(['os.cfg',os.path.expanduser('~/.os.cfg'),'/etc/os-maint/os.cfg'])
-
 parser = argparse.ArgumentParser(description='Nova Quota Sync')
 tenant_group = parser.add_mutually_exclusive_group(required=True)
 tenant_group.add_argument('--tenant', action='append', default=[], help='Tenant(s) to work on')
 tenant_group.add_argument('--all', action='store_true', default=False, help='Work on ALL tenants')
 parser.add_argument('--verbose', '-v', action='count', default=0, help='Verbose')
+parser.add_argument('--config', '-c', action='store', dest='config_file', nargs='+',
+    default=['os.cfg',os.path.expanduser('~/.os.cfg'),'/etc/os-maint/os.cfg'],
+    help='Location(s) to look for configuration file')
 args = parser.parse_args()
 
-cinder_db_conn = config.get('NOVA', 'db_connection')
+config = ConfigParser.ConfigParser()
+config.read(args.config_file)
+
+nova_db_conn = config.get('NOVA', 'db_connection')
 os_user_name = config.get('OPENSTACK', 'os_user_name')
 os_password = config.get('OPENSTACK', 'os_password')
 os_tenant_name = config.get('OPENSTACK', 'os_tenant_name')
@@ -28,7 +31,7 @@ if args.verbose >= 2:
 else:
   sql_echo = False
 
-engine = create_engine(cinder_db_conn, echo=sql_echo)
+engine = create_engine(nova_db_conn, echo=sql_echo)
 conn = engine.connect()
 metadata = MetaData()
 quota_usages = Table(
