@@ -52,7 +52,7 @@ instances = Table('instances',
 
 nc = client.Client(os_user_name, os_password, os_tenant_name,
                    os_auth_url, service_type='compute')
-usage = dict()
+
 usage_select = select([quota_usages])
 
 initial_usages = conn.execute(usage_select)
@@ -66,6 +66,8 @@ for u in initial_usages:
                                                   'ram': 0}
     initial_usage[u.project_id][u.user_id][u.resource] = u.in_use
 
+# preload dict(usage) so that we iterate over projects with zero VMs
+usage = initial_usage
 
 # These are the only states that should count against one's quota
 instance_select = select([instances]).where(or_(instances.c.vm_state == 'active',
