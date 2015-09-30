@@ -82,7 +82,6 @@ for project in initial_usage:
 instance_select = select([instances]).where(or_(instances.c.vm_state == 'active',
                                                 instances.c.vm_state == 'suspended',
                                                 instances.c.vm_state == 'paused',
-                                                instances.c.vm_state == 'error',
                                                 instances.c.vm_state == 'stopped',
                                                 instances.c.vm_state == 'shutoff'))
 instances = conn.execute(instance_select)
