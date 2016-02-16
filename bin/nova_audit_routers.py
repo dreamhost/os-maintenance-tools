@@ -3,6 +3,7 @@
 import ConfigParser
 import argparse
 import os
+import sys
 from novaclient.v1_1 import client as novaclient
 from neutronclient.v2_0 import client as neutronclient
 from keystoneclient.v2_0 import client as keystoneclient
@@ -107,7 +108,9 @@ def list_all_vms(osvars):
 
 def check_vm_is_router(router_ids, vm):
     vm_id = vm.name[3:]
+    stray = 0
     if vm_id not in router_ids:
+        stray = 1
         print "stray: %s (rid %s) created %s on %s (status: %s, %s)" % (
             vm.id, vm_id, vm.created,
             vm._info['OS-EXT-SRV-ATTR:hypervisor_hostname'],
@@ -115,6 +118,8 @@ def check_vm_is_router(router_ids, vm):
         if args.clean:
             print "Cleaning"
             # novac.servers.delete(vm.id)
+
+    return stray
 
 
 def main():
@@ -124,9 +129,15 @@ def main():
     service_tenant_id = get_service_tenant_id(osvars)
     router_ids = get_routers_list(osvars)
 
+    strays = 0
     for vm in list_all_vms(osvars):
         if vm.tenant_id == service_tenant_id:
-            check_vm_is_router(router_ids, vm)
+            strays = strays + check_vm_is_router(router_ids, vm)
+
+    if strays > 1:
+        sys.exit(1)
+    else:
+        sys.exit(0)
 
 
 if __name__ == "__main__":
