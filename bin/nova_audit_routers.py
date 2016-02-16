@@ -34,7 +34,6 @@ def get_os_vars():
     os_vars = {'OS_PASSWORD': None,
                'OS_AUTH_URL': None,
                'OS_USERNAME': None,
-               'OS_TENANT_ID': None,
                'OS_TENANT_NAME': None,
                'OS_SERVICE_TENANT_NAME': 'service'}
 
