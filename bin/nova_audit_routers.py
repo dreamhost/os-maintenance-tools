@@ -43,7 +43,7 @@ def get_os_vars():
             config = ConfigParser.ConfigParser()
             config.read(['os.cfg', os.path.expanduser('~/.os.cfg')])
             os_vars[os_var] = config.get('OPENSTACK', os_var.lower())
-        except ConfigParser.NoOptionError:
+        except (ConfigParser.NoOptionError, ConfigParser.NoSectionError):
             continue
 
     for os_var in os_vars.keys():
