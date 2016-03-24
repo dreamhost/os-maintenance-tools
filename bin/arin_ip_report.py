@@ -4,16 +4,11 @@ import sys          # reads command-line args
 import ConfigParser
 import os
 
-os_user_name = os.getenv('OS_USERNAME') 
-os_password = os.getenv('OS_PASSWORD') 
-os_tenant_name = os.getenv('OS_TENANT_NAME')
-os_auth_url = os.getenv('OS_AUTH_URL')
-
 from neutronclient.v2_0 import client as neutronclient
-nc = neutronclient.Client(username=os_user_name,
-                   password=os_password,
-                   tenant_name=os_tenant_name,
-                   auth_url=os_auth_url)
+nc = neutronclient.Client(username=os.getenv('OS_USERNAME'),
+                   password=os.getenv('OS_PASSWORD'),
+                   tenant_name=os.getenv('OS_TENANT_NAME'),
+                   auth_url=os.getenv('OS_AUTH_URL'))
 
 pubnet = sys.argv[1]
 
