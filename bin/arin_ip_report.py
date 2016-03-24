@@ -4,10 +4,6 @@ import sys          # reads command-line args
 import ConfigParser
 import os
 
-config = ConfigParser.ConfigParser()
-config.read(['os.cfg',
-    os.path.expanduser('~/.os.cfg')])
-
 os_user_name = os.getenv('OS_USERNAME') 
 os_password = os.getenv('OS_PASSWORD') 
 os_tenant_name = os.getenv('OS_TENANT_NAME')
