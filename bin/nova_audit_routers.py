@@ -4,7 +4,7 @@ import ConfigParser
 import argparse
 import os
 import sys
-from novaclient.v1_1 import client as novaclient
+from novaclient import client as novaclient
 from neutronclient.v2_0 import client as neutronclient
 from keystoneclient.v2_0 import client as keystoneclient
 
@@ -97,7 +97,8 @@ def get_routers_list(osvars):
 def list_all_vms(osvars):
     """Returns a listing of all VM objects as reported by Nova"""
 
-    novac = novaclient.Client(osvars['OS_USERNAME'],
+    novac = novaclient.Client('2',
+                              osvars['OS_USERNAME'],
                               osvars['OS_PASSWORD'],
                               osvars['OS_TENANT_NAME'],
                               osvars['OS_AUTH_URL'],
